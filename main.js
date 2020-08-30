@@ -5,7 +5,7 @@ var audio3;
 var heartbeat = 0;
 
 window.onload = () => {
-  'use strict';
+    'use strict';
 
     audio1 = document.getElementById('audio');
     audio1.load();
@@ -17,247 +17,248 @@ window.onload = () => {
     audio3 = document.getElementById('audio2');
     audio3.load();
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker
-             .register('./sw.js');
-  }
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker
+            .register('./sw.js');
+    }
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
     const isTwa = urlParams.get('isTwa');
+    const hasXboxControls = urlParams.get('xbox');
 
-    camStart(isTwa);
+    camStart(isTwa, hasXboxControls);
 }
 // Override the function with all the posibilities
-    navigator.getUserMedia ||
-        (navigator.getUserMedia = navigator.mozGetUserMedia ||
+navigator.getUserMedia ||
+    (navigator.getUserMedia = navigator.mozGetUserMedia ||
         navigator.webkitGetUserMedia || navigator.msGetUserMedia);
 
-    var gl;
-    var canvas;
-    var Param1 = 0.0;
-    var Param2 = 0.0;
-    var Param3 = 0.0;
-    var mouseX = 0.5;
-    var mouseY = 0.5;
-    var keyState1 = 0;
-    var keyState2 = 0;
-    var keyState3 = 0;
-    var keyState4 = 0;
-    function initGL() {
-        try {
-            gl = canvas.getContext("experimental-webgl");
-        } catch (e) {
+var gl;
+var canvas;
+var Param1 = 0.0;
+var Param2 = 0.0;
+var Param3 = 0.0;
+var mouseX = 0.5;
+var mouseY = 0.5;
+var keyState1 = 0;
+var keyState2 = 0;
+var keyState3 = 0;
+var keyState4 = 0;
+function initGL() {
+    try {
+        gl = canvas.getContext("experimental-webgl");
+    } catch (e) {
+    }
+    if (!gl) {
+        alert("Could not initialise WebGL, sorry :-(");
+    }
+}
+
+function getShader(gl, id) {
+    var shaderScript = document.getElementById(id);
+    if (!shaderScript) {
+        return null;
+    }
+
+    var str = "";
+    var k = shaderScript.firstChild;
+    while (k) {
+        if (k.nodeType == 3) {
+            str += k.textContent;
         }
-        if (!gl) {
-            alert("Could not initialise WebGL, sorry :-(");
-        }
+        k = k.nextSibling;
     }
 
-    function getShader(gl, id) {
-        var shaderScript = document.getElementById(id);
-        if (!shaderScript) {
-            return null;
-        }
-
-        var str = "";
-        var k = shaderScript.firstChild;
-        while (k) {
-            if (k.nodeType == 3) {
-                str += k.textContent;
-            }
-            k = k.nextSibling;
-        }
-
-        var shader;
-        if (shaderScript.type == "f") {
-            shader = gl.createShader(gl.FRAGMENT_SHADER);
-        } else if (shaderScript.type == "v") {
-            shader = gl.createShader(gl.VERTEX_SHADER);
-        } else {
-            return null;
-        }
-
-        gl.shaderSource(shader, str);
-        gl.compileShader(shader);
-
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            alert(gl.getShaderInfoLog(shader));
-            return null;
-        }
-
-        return shader;
+    var shader;
+    if (shaderScript.type == "f") {
+        shader = gl.createShader(gl.FRAGMENT_SHADER);
+    } else if (shaderScript.type == "v") {
+        shader = gl.createShader(gl.VERTEX_SHADER);
+    } else {
+        return null;
     }
 
-    var programsArray = new Array();
-    var current_program;
+    gl.shaderSource(shader, str);
+    gl.compileShader(shader);
 
-    function initShaders() {
-        programsArray.push(createProgram("shader-vs", "shader-1-fs"));
-        current_program = programsArray[0];
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        alert(gl.getShaderInfoLog(shader));
+        return null;
     }
 
-     function createProgram(vertexShaderId, fragmentShaderId) {
-        var shaderProgram;
-        var fragmentShader = getShader(gl, fragmentShaderId);
-        var vertexShader = getShader(gl, vertexShaderId);
+    return shader;
+}
 
-        shaderProgram = gl.createProgram();
-        gl.attachShader(shaderProgram, vertexShader);
-        gl.attachShader(shaderProgram, fragmentShader);
-        gl.linkProgram(shaderProgram);
+var programsArray = new Array();
+var current_program;
 
-        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-            alert("Could not initialise shaders");
-        }
+function initShaders() {
+    programsArray.push(createProgram("shader-vs", "shader-1-fs"));
+    current_program = programsArray[0];
+}
 
-        gl.useProgram(shaderProgram);
+function createProgram(vertexShaderId, fragmentShaderId) {
+    var shaderProgram;
+    var fragmentShader = getShader(gl, fragmentShaderId);
+    var vertexShader = getShader(gl, vertexShaderId);
 
-        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
-        gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+    shaderProgram = gl.createProgram();
+    gl.attachShader(shaderProgram, vertexShader);
+    gl.attachShader(shaderProgram, fragmentShader);
+    gl.linkProgram(shaderProgram);
 
-        shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord");
-        gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute);
-
-        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
-        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
-        shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uSampler");
-        shaderProgram.resolutionUniform = gl.getUniformLocation(shaderProgram, "resolution");
-        shaderProgram.mouse = gl.getUniformLocation(shaderProgram, "mouse");
-        shaderProgram.indexUniform = gl.getUniformLocation(shaderProgram, "index");
-        shaderProgram.time = gl.getUniformLocation(shaderProgram, "time");
-        shaderProgram.Param1 = gl.getUniformLocation(shaderProgram, "Param1");
-        shaderProgram.Param2 = gl.getUniformLocation(shaderProgram, "Param2");
-        shaderProgram.Param3 = gl.getUniformLocation(shaderProgram, "Param3");
-        return shaderProgram;
+    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+        alert("Could not initialise shaders");
     }
 
-    var webcam;
-    var texture;
+    gl.useProgram(shaderProgram);
 
-    function initTexture() {
-        texture = gl.createTexture();
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.bindTexture(gl.TEXTURE_2D, null);
+    shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+    gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+
+    shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord");
+    gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute);
+
+    shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+    shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+    shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uSampler");
+    shaderProgram.resolutionUniform = gl.getUniformLocation(shaderProgram, "resolution");
+    shaderProgram.mouse = gl.getUniformLocation(shaderProgram, "mouse");
+    shaderProgram.indexUniform = gl.getUniformLocation(shaderProgram, "index");
+    shaderProgram.time = gl.getUniformLocation(shaderProgram, "time");
+    shaderProgram.Param1 = gl.getUniformLocation(shaderProgram, "Param1");
+    shaderProgram.Param2 = gl.getUniformLocation(shaderProgram, "Param2");
+    shaderProgram.Param3 = gl.getUniformLocation(shaderProgram, "Param3");
+    return shaderProgram;
+}
+
+var webcam;
+var texture;
+
+function initTexture() {
+    texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+}
+
+var mvMatrix = mat4.create();
+var mvMatrixStack = [];
+var pMatrix = mat4.create();
+
+function mvPushMatrix() {
+    var copy = mat4.create();
+    mat4.set(mvMatrix, copy);
+    mvMatrixStack.push(copy);
+}
+
+function mvPopMatrix() {
+    if (mvMatrixStack.length == 0) {
+        throw "Invalid popMatrix!";
     }
+    mvMatrix = mvMatrixStack.pop();
+}
 
-    var mvMatrix = mat4.create();
-    var mvMatrixStack = [];
-    var pMatrix = mat4.create();
+var ix = 0.0;
+var end;
+var st = new Date().getTime();
+function setUniforms() {
+    end = new Date().getTime();
+    gl.uniformMatrix4fv(current_program.pMatrixUniform, false, pMatrix);
+    gl.uniformMatrix4fv(current_program.mvMatrixUniform, false, mvMatrix);
+    gl.uniform2f(current_program.resolutionUniform, canvas.width, canvas.height);
+    gl.uniform2f(current_program.mouse, mouseX, mouseY);
+    gl.uniform1i(current_program.indexUniform, index);
+    //        gl.uniform1f(current_program.time, performance.now()/1000.0);
+    gl.uniform1f(current_program.time, ((end - st) % 1000000) / 1000.0);
+    gl.uniform1f(current_program.Param1, Param1);
+    gl.uniform1f(current_program.Param2, Param2);
+    gl.uniform1f(current_program.Param3, Param3);
+}
 
-    function mvPushMatrix() {
-        var copy = mat4.create();
-        mat4.set(mvMatrix, copy);
-        mvMatrixStack.push(copy);
-    }
+var cubeVertexPositionBuffer;
+var cubeVertexTextureCoordBuffer;
+var cubeVertexIndexBuffer;
+function initBuffers() {
+    cubeVertexPositionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
+    vertices = [-1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0];
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    cubeVertexPositionBuffer.itemSize = 2;
+    cubeVertexPositionBuffer.numItems = 4;
 
-    function mvPopMatrix() {
-        if (mvMatrixStack.length == 0) {
-            throw "Invalid popMatrix!";
-        }
-        mvMatrix = mvMatrixStack.pop();
-    }
+    cubeVertexTextureCoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer);
+    var textureCoords = [0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0];
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW);
+    cubeVertexTextureCoordBuffer.itemSize = 2;
+    cubeVertexTextureCoordBuffer.numItems = 4;
 
-    var ix = 0.0;
-    var end;
-    var st = new Date().getTime();
-    function setUniforms() {
-        end = new Date().getTime();
-        gl.uniformMatrix4fv(current_program.pMatrixUniform, false, pMatrix);
-        gl.uniformMatrix4fv(current_program.mvMatrixUniform, false, mvMatrix);
-        gl.uniform2f(current_program.resolutionUniform, canvas.width, canvas.height);
-        gl.uniform2f(current_program.mouse, mouseX, mouseY);
-        gl.uniform1i(current_program.indexUniform, index);
-//        gl.uniform1f(current_program.time, performance.now()/1000.0);
-        gl.uniform1f(current_program.time, ((end-st) % 1000000)/1000.0);
-        gl.uniform1f(current_program.Param1, Param1);
-        gl.uniform1f(current_program.Param2, Param2);
-        gl.uniform1f(current_program.Param3, Param3);
-    }
+    cubeVertexIndexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
+    var cubeVertexIndices = [0, 1, 2, 0, 2, 3];
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cubeVertexIndices), gl.STATIC_DRAW);
+    cubeVertexIndexBuffer.itemSize = 1;
+    cubeVertexIndexBuffer.numItems = 6;
+}
 
-    var cubeVertexPositionBuffer;
-    var cubeVertexTextureCoordBuffer;
-    var cubeVertexIndexBuffer;
-    function initBuffers() {
-        cubeVertexPositionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
-        vertices = [-1.0, -1.0, 1.0, -1.0, 1.0,  1.0, -1.0,  1.0];
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-        cubeVertexPositionBuffer.itemSize = 2;
-        cubeVertexPositionBuffer.numItems = 4;
+function drawScene() {
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        cubeVertexTextureCoordBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer);
-        var textureCoords = [0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0 ];
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW);
-        cubeVertexTextureCoordBuffer.itemSize = 2;
-        cubeVertexTextureCoordBuffer.numItems = 4;
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+    gl.enable(gl.BLEND);
 
-        cubeVertexIndexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
-        var cubeVertexIndices = [0, 1, 2,      0, 2, 3];
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cubeVertexIndices), gl.STATIC_DRAW);
-        cubeVertexIndexBuffer.itemSize = 1;
-        cubeVertexIndexBuffer.numItems = 6;
-    }
+    mat4.ortho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0, pMatrix);
 
-    function drawScene() {
-        gl.viewport(0, 0, canvas.width, canvas.height);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.useProgram(current_program);
+    mat4.identity(mvMatrix);
 
-        gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-        gl.enable(gl.BLEND);
+    gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
+    gl.vertexAttribPointer(current_program.vertexPositionAttribute, cubeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        mat4.ortho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0, pMatrix);
+    gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer);
+    gl.vertexAttribPointer(current_program.textureCoordAttribute, cubeVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.useProgram(current_program);
-        mat4.identity(mvMatrix);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, webcam);
+    gl.uniform1i(current_program.samplerUniform, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
-        gl.vertexAttribPointer(current_program.vertexPositionAttribute, cubeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer);
-        gl.vertexAttribPointer(current_program.textureCoordAttribute, cubeVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, webcam);
-        gl.uniform1i(current_program.samplerUniform, 0);
-
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
-        setUniforms();
-        gl.drawElements(gl.TRIANGLES, cubeVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
-        gl.bindTexture(gl.TEXTURE_2D, null);
-    }
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
+    setUniforms();
+    gl.drawElements(gl.TRIANGLES, cubeVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+}
 
 
-    var old_time = Date.now();
+var old_time = Date.now();
 
-    function tick() {
-        requestAnimFrame(tick);
-        drawScene();
-    }
+function tick() {
+    requestAnimFrame(tick);
+    drawScene();
+}
 
-    function webGLStart() {
-        canvas = document.getElementById("webgl-canvas");
-        canvas.width = 128;
-        canvas.height = 128;
-        initGL();
-        initShaders();
-        initBuffers();
-        initTexture();
+function webGLStart() {
+    canvas = document.getElementById("webgl-canvas");
+    canvas.width = 128;
+    canvas.height = 128;
+    initGL();
+    initShaders();
+    initBuffers();
+    initTexture();
 
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);
-        gl.enable(gl.DEPTH_TEST);
-        tick();
-    }
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.enable(gl.DEPTH_TEST);
+    tick();
+}
 
-function PlaySound(i){
-    switch (i){
+function PlaySound(i) {
+    switch (i) {
         case 1:
             audio1.play();
             break;
@@ -278,172 +279,285 @@ function PlaySound(i){
             break;
     }
 }
-    function Action(i){
-        PlaySound(i);
-		switch(i){
-			case 1: // style
-			  Param1=Param1+1;
-			  if (Param1 > 1)
-			  	Param1 = 0;
-			  break;
-			case 2: // fast/slow
-			  Param2=Param2+1;
-			  if (Param2 > 1)
-			  	  Param2 = 0;
-			  break;
-			case 3: // colours
-			  Param3=Param3+1;
-			  if (Param3 > 4)
-			  	Param3 = 0;
-  		     break;
-			case 4: // mirrors
- 				index = index + 1;
-  				if (index > 2)
-    				index = 0;
-    		  break;
-		}
+function Action(i) {
+    PlaySound(i);
+    switch (i) {
+        case 1: // style
+            Param1 = Param1 + 1;
+            if (Param1 > 1)
+                Param1 = 0;
+            break;
+        case 2: // fast/slow
+            Param2 = Param2 + 1;
+            if (Param2 > 1)
+                Param2 = 0;
+            break;
+        case 3: // colours
+            Param3 = Param3 + 1;
+            if (Param3 > 4)
+                Param3 = 0;
+            break;
+        case 4: // mirrors
+            index = index + 1;
+            if (index > 2)
+                index = 0;
+            break;
     }
+}
 
-    function MonitorKeyDown(e) {
-      if (!e) e=window.event;
-        if (e.keyCode == 32 || e.keyCode == 49) {
-            if (keyState1 == 0)
-              Action(4);
-            keyState1 = 1;
-        }
-        else if (e.keyCode == 50) {
-            if (keyState2 == 0)
-    				  Action(2);
-            keyState2 = 1;
-        }
-        else if (e.keyCode == 51  || e.keyCode == 13) {
-            if (keyState2 == 0)
-          		Action(3);
-            keyState2 = 1;
-        }
-        else if (e.keyCode == 52) {
-            if (keyState2 == 0)
-      				Action(1);
-            keyState2 = 1;
-        }
-       return false;
+function MonitorKeyDown(e) {
+    if (!e) e = window.event;
+    if (e.keyCode == 32 || e.keyCode == 49) {
+        if (keyState1 == 0)
+            Action(4);
+        keyState1 = 1;
     }
+    else if (e.keyCode == 50) {
+        if (keyState2 == 0)
+            Action(2);
+        keyState2 = 1;
+    }
+    else if (e.keyCode == 51 || e.keyCode == 13) {
+        if (keyState2 == 0)
+            Action(3);
+        keyState2 = 1;
+    }
+    else if (e.keyCode == 52) {
+        if (keyState2 == 0)
+            Action(1);
+        keyState2 = 1;
+    }
+    return false;
+}
 
-    function MonitorKeyUp(e) {
-      if (!e) e=window.event;
-        if (e.keyCode == 32 || e.keyCode == 49) {
-            keyState1 = 0;
-        }
-        else if (e.keyCode == 50) {
-            keyState2 = 0;
-        }
-        else if (e.keyCode == 51  || e.keyCode == 13) {
-            keyState2 = 0;
-        }
-        else if (e.keyCode == 52) {
-            keyState2 = 0;
-        }
-       return false;
+function MonitorKeyUp(e) {
+    if (!e) e = window.event;
+    if (e.keyCode == 32 || e.keyCode == 49) {
+        keyState1 = 0;
     }
+    else if (e.keyCode == 50) {
+        keyState2 = 0;
+    }
+    else if (e.keyCode == 51 || e.keyCode == 13) {
+        keyState2 = 0;
+    }
+    else if (e.keyCode == 52) {
+        keyState2 = 0;
+    }
+    return false;
+}
 
 var mouseState = 0;
-     function MonitorMouseDown(e) {
-      if (!e) e=window.event;
-        if (e.button == 0) {
-            mouseState = 1;
-            	mouseX =e.clientX/canvas.scrollWidth;
-	   			mouseY =1.0 - e.clientY/canvas.scrollHeight;
-         }
-      return false;
+function MonitorMouseDown(e) {
+    if (!e) e = window.event;
+    if (e.button == 0) {
+        mouseState = 1;
+        mouseX = e.clientX / canvas.scrollWidth;
+        mouseY = 1.0 - e.clientY / canvas.scrollHeight;
+    }
+    return false;
+}
+
+function MonitorMouseUp(e) {
+    if (!e) e = window.event;
+    if (e.button == 0) {
+        mouseState = 0;
+    }
+    return false;
+}
+
+function camStart(isTwa, hasXboxControls) {
+    var splash = document.querySelector('splash');
+    var button = document.querySelector('button');
+    var button1 = document.querySelector('button1');
+    var button2 = document.querySelector('button2');
+    var button3 = document.querySelector('button3');
+    var buttonl = document.querySelector('buttonl');
+    var buttonr = document.querySelector('buttonr');
+    webcam = document.createElement('canvas'); //getElementById('webcam');
+    keyState1 = 0;
+    keyState2 = 0;
+    keyState3 = 0;
+    keyState4 = 0;
+
+    //Param1 = Math.random(); // for Electra
+    //Param2 = Math.random();
+
+    splash.onclick = function (e) {
+        if (document.body.requestFullscreen) {
+            document.body.requestFullscreen();
+        } else if (document.body.msRequestFullscreen) {
+            document.body.msRequestFullscreen();
+        } else if (document.body.mozRequestFullScreen) {
+            document.body.mozRequestFullScreen();
+        } else if (document.body.webkitRequestFullscreen) {
+            document.body.webkitRequestFullscreen();
+        }
+
+        splash.hidden = true;
+    }
+    window.setTimeout(function () {
+        if (document.body.requestFullscreen) {
+            document.body.requestFullscreen();
+        } else if (document.body.msRequestFullscreen) {
+            document.body.msRequestFullscreen();
+        } else if (document.body.mozRequestFullScreen) {
+            document.body.mozRequestFullScreen();
+        } else if (document.body.webkitRequestFullscreen) {
+            document.body.webkitRequestFullscreen();
+        }
+
+        splash.hidden = true;
+    }, 5000); // hide Splash screen after 2.5 seconds
+    webGLStart();
+
+    document.onkeydown = MonitorKeyDown;
+    document.onkeyup = MonitorKeyUp;
+
+    canvas.onmousedown = MonitorMouseDown;
+    canvas.onmouseup = MonitorMouseUp;
+    canvas.onmousemove = function (e) {
+        e = e || window.event;
+        if (mouseState == 1) {
+            mouseX = (mouseX + 7.0 * e.clientX / canvas.scrollWidth) / 8.0;
+            mouseY = (mouseY + 7.0 * (1.0 - e.clientY / canvas.scrollHeight)) / 8.0;
+        }
+    }
+    canvas.ontouchstart = function (e) {
+        e.preventDefault();
+        toggleButtons();
+        var touchs = e.changedTouches;
+        mouseX = touchs[0].clientX / canvas.scrollWidth;
+        mouseY = 1.0 - touchs[0].clientY / canvas.scrollHeight;
+        c.style.filter = "sepia(1) hue-rotate(230deg) saturate(2)";
+    };
+    canvas.ontouchend = function (e) {
+
+        e.preventDefault();
+        c.style.filter = "grayscale(0)";
+    };
+    canvas.ontouchmove = function (e) {
+        e.preventDefault();
+        var touches = e.changedTouches;
+        mouseX = touches[0].clientX / canvas.scrollWidth; //] (mouseX + 7.0*touches/canvas.scrollWidth)/8.0;
+        mouseY = 1.0 - touches[0].clientY / canvas.scrollHeight; //(mouseY + 7.0*(1.0 - e.clientY/canvas.scrollHeight))/8.0;
+    };
+    button.onmousedown = function (e) {
+        Action(4);
+    }
+    button1.onmousedown = function (e) {
+        Action(1);
+    }
+    button2.onmousedown = function (e) {
+        Action(2);
+    }
+    button3.onmousedown = function (e) {
+        Action(3);
+    }
+    buttonl.onmousedown = function (e) {
+        Action(5);
+    }
+    buttonr.onmousedown = function (e) {
+        Action(6);
     }
 
-    function MonitorMouseUp(e) {
-      if (!e) e=window.event;
-        if (e.button == 0) {
-            mouseState = 0;
-         }
-      return false;
+    button.ontouchstart = function (e) {
+        e.preventDefault();
+        Action(4);
+    }
+    button1.ontouchstart = function (e) {
+        e.preventDefault();
+        Action(1);
+    }
+    button2.ontouchstart = function (e) {
+        e.preventDefault();
+        Action(2);
+    }
+    button3.ontouchstart = function (e) {
+        e.preventDefault();
+        Action(3);
+    }
+    buttonl.ontouchstart = function (e) {
+        e.preventDefault();
+        Action(5);
+    }
+    buttonr.ontouchstart = function (e) {
+        e.preventDefault();
+        Action(6);
     }
 
-    function camStart(isTwa) {
-       var splash  = document.querySelector('splash');
-       var button = document.querySelector('button');
-       var button1 = document.querySelector('button1');
-       var button2 = document.querySelector('button2');
-       var button3 = document.querySelector('button3');
-        webcam = document.createElement('canvas'); //getElementById('webcam');
-        //Param1 = Math.random(); // for Electra
-        //Param2 = Math.random();
-        splash.onclick = function(e) {
-           if (document.body.requestFullscreen) {
-             document.body.requestFullscreen();
-           } else if (document.body.msRequestFullscreen) {
-             document.body.msRequestFullscreen();
-           } else if (document.body.mozRequestFullScreen) {
-             document.body.mozRequestFullScreen();
-           } else if (document.body.webkitRequestFullscreen) {
-             document.body.webkitRequestFullscreen();
-           }
-          splash.hidden = true;
+    if (hasXboxControls) {
+        gamepads.addEventListener('connect', e => {
+            console.log('Gamepad connected:');
+            console.log(e.gamepad);
+            e.gamepad.addEventListener('buttonpress', e => showPressedButton(e.index));
+            e.gamepad.addEventListener('buttonrelease', e => removePressedButton(e.index));
+            e.gamepad.addEventListener('joystickmove', e => moveJoystick(e.values, true),
+                StandardMapping.Axis.JOYSTICK_LEFT);
+            e.gamepad.addEventListener('joystickmove', e => moveJoystick(e.values, false),
+                StandardMapping.Axis.JOYSTICK_RIGHT);
+        });
+
+        gamepads.addEventListener('disconnect', e => {
+            console.log('Gamepad disconnected:');
+            console.log(e.gamepad);
+        });
+
+        gamepads.start();
+
+        function showPressedButton(index) {
+            console.log("Press: ", index);
+            if (!splash.hidden) {
+                splash.hidden = true;
+            } else switch (index) {
+                case 0: // A
+                case 12: // dup
+                case 6:
+                case 9:
+                case 11:
+                case 16:
+                    Action(1);
+                    break;
+                case 1: // B
+                case 7:
+                case 13: // ddown
+                    Action(2);
+                    break;
+                case 8: // View Button new 20/6/20
+                    toggleButtons(); // new 20/6/20
+                    break; // new 20/6/20
+                case 2: // X
+                case 4: // LB
+                    Action(3);
+                    break;
+                case 3: // Y
+                case 5: // RT
+                    Action(4);
+                    break;
+                case 14: // dleft
+                    Action(5);
+                    break;
+                case 15: // dright
+                    Action(6);
+                    break;
+                case 10: // XBox
+                    Action(6);
+                    break;
+                default:
+            }
         }
-        if(!isTwa){
-            window.setTimeout(function() {splash.hidden = true;}, 2500); // hide Splash screen after 2.5 seconds
-        }else{
-            splash.hidden = true;
+
+        function removePressedButton(index) {
+            console.log("Releasd: ", index);
         }
-        webGLStart();
-        document.onkeydown = MonitorKeyDown;
-        document.onkeyup = MonitorKeyUp;
-        canvas.onmousedown = MonitorMouseDown;
-        canvas.onmouseup = MonitorMouseUp;
-        canvas.onmousemove = function(e) {
-        	   e=e || window.event;
-        	   if (mouseState == 1) {
-	   				mouseX = (mouseX + 127.0*e.clientX/canvas.scrollWidth)/128.0;
-	   				mouseY = (mouseY + 127.0*(1.0 - e.clientY/canvas.scrollHeight))/128.0;
-	   			}
-		 }
-		 canvas.ontouchstart = function(e) {
-		 	e.preventDefault();
-    		var touchs = e.changedTouches;
-     		mouseX = touchs[0].clientX/canvas.scrollWidth;
- 	   		mouseY = 1.0-touchs[0].clientY/canvas.scrollHeight;
-    	};
-    	canvas.ontouchend = function(e) {
-    		e.preventDefault();
-    	};
-		canvas.ontouchmove = function(e) {
-    		e.preventDefault();
-    		var touches = e.changedTouches;
-    		mouseX = touches[0].clientX/canvas.scrollWidth; //] (mouseX + 7.0*touches/canvas.scrollWidth)/8.0;
-	   		mouseY = 1.0-touches[0].clientY/canvas.scrollHeight; //(mouseY + 7.0*(1.0 - e.clientY/canvas.scrollHeight))/8.0;
-		};
-		 button.onmousedown = function(e) {
-       	Action(4);
-       }
-       button1.onmousedown = function(e) {
-       	Action(1);
-       }
-       button2.onmousedown = function(e) {
-       	Action(2);
-       }
-       button3.onmousedown = function(e) {
-       	Action(3);
-       }
-       button.ontouchstart = function(e) {
-        e.preventDefault();
-       	Action(4);
-       }
-       button1.ontouchstart = function(e) {
-        e.preventDefault();
-       	Action(1);
-       }
-       button2.ontouchstart = function(e) {
-        e.preventDefault();
-       	Action(2);
-       }
-       button3.ontouchstart = function(e) {
-        e.preventDefault();
-       	Action(3);
-       }
+
+        function moveJoystick(values, isLeft) {
+            console.log("Joystick: ", values[0], values[1]);
+            if (values[1] >= 0 || values[1] >= 0) {
+                XBoxVolume = Math.max(values[1], values[0]);
+            }
+
+        }
     }
+
+}
