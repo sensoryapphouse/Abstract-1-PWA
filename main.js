@@ -1,21 +1,5 @@
-var index = 0;
-var audio1;
-var audio2;
-var audio3;
-var heartbeat = 0;
-
 window.onload = () => {
     'use strict';
-
-    audio1 = document.getElementById('audio');
-    audio1.load();
-
-    audio2 = document.getElementById('audio1');
-    audio2.load();
-    audio2.loop = true;
-
-    audio3 = document.getElementById('audio2');
-    audio3.load();
 
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker
@@ -25,9 +9,9 @@ window.onload = () => {
     const urlParams = new URLSearchParams(queryString);
     const isTwa = urlParams.get('isTwa');
     const hasXboxControls = urlParams.get('xbox');
-
     camStart(isTwa, hasXboxControls);
 }
+
 // Override the function with all the posibilities
 navigator.getUserMedia ||
     (navigator.getUserMedia = navigator.mozGetUserMedia ||
@@ -35,18 +19,22 @@ navigator.getUserMedia ||
 
 var gl;
 var canvas;
-var Param1 = 0.0;
-var Param2 = 0.0;
-var Param3 = 0.0;
+var Param1 = 1.0;
+var Param2 = 1.0;
+var Param3 = 1.0;
+var Param4 = 1.0;
 var mouseX = 0.5;
 var mouseY = 0.5;
 var keyState1 = 0;
 var keyState2 = 0;
 var keyState3 = 0;
 var keyState4 = 0;
+var keyStatel = 0;
+var keyStater = 0;
 function initGL() {
     try {
-        gl = canvas.getContext("experimental-webgl");
+        gl = canvas.getContext("experimental-webgl", { antialias: true });
+        //            gl = canvas.getContext("experimental-webgl", {preserveDrawingBuffer: true});
     } catch (e) {
     }
     if (!gl) {
@@ -91,9 +79,12 @@ function getShader(gl, id) {
 
 var programsArray = new Array();
 var current_program;
-
+var index = 0;
 function initShaders() {
     programsArray.push(createProgram("shader-vs", "shader-1-fs"));
+    programsArray.push(createProgram("shader-vs", "shader-2-fs"));
+    programsArray.push(createProgram("shader-vs", "shader-3-fs"));
+    programsArray.push(createProgram("shader-vs", "shader-4-fs"));
     current_program = programsArray[0];
 }
 
@@ -117,18 +108,18 @@ function createProgram(vertexShaderId, fragmentShaderId) {
     gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
     shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord");
-    //gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute);
+    //       gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute);
 
     shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
     shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
     shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uSampler");
     shaderProgram.resolutionUniform = gl.getUniformLocation(shaderProgram, "resolution");
     shaderProgram.mouse = gl.getUniformLocation(shaderProgram, "mouse");
-    shaderProgram.indexUniform = gl.getUniformLocation(shaderProgram, "index");
     shaderProgram.time = gl.getUniformLocation(shaderProgram, "time");
     shaderProgram.Param1 = gl.getUniformLocation(shaderProgram, "Param1");
     shaderProgram.Param2 = gl.getUniformLocation(shaderProgram, "Param2");
     shaderProgram.Param3 = gl.getUniformLocation(shaderProgram, "Param3");
+    shaderProgram.Param4 = gl.getUniformLocation(shaderProgram, "Param4");
     return shaderProgram;
 }
 
@@ -172,12 +163,11 @@ function setUniforms() {
     gl.uniformMatrix4fv(current_program.mvMatrixUniform, false, mvMatrix);
     gl.uniform2f(current_program.resolutionUniform, canvas.width, canvas.height);
     gl.uniform2f(current_program.mouse, mouseX, mouseY);
-    gl.uniform1i(current_program.indexUniform, index);
-    //        gl.uniform1f(current_program.time, performance.now()/1000.0);
     gl.uniform1f(current_program.time, ((end - st) % 1000000) / 1000.0);
     gl.uniform1f(current_program.Param1, Param1);
     gl.uniform1f(current_program.Param2, Param2);
     gl.uniform1f(current_program.Param3, Param3);
+    gl.uniform1f(current_program.Param4, Param4);
 }
 
 var cubeVertexPositionBuffer;
@@ -222,7 +212,7 @@ function drawScene() {
     gl.vertexAttribPointer(current_program.vertexPositionAttribute, cubeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer);
-    //gl.vertexAttribPointer(current_program.textureCoordAttribute, cubeVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    //        gl.vertexAttribPointer(current_program.textureCoordAttribute, cubeVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -232,11 +222,9 @@ function drawScene() {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
     setUniforms();
     gl.drawElements(gl.TRIANGLES, cubeVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
     gl.bindTexture(gl.TEXTURE_2D, null);
 }
-
-
-var old_time = Date.now();
 
 function tick() {
     requestAnimFrame(tick);
@@ -245,8 +233,16 @@ function tick() {
 
 function webGLStart() {
     canvas = document.getElementById("webgl-canvas");
-    canvas.width = 128;
-    canvas.height = 128;
+    if (screen.width > 1500 || screen.height > 1500) {
+        canvas.width = 1024;
+        canvas.height = 1024;
+    }
+    else {
+        canvas.width = 512;
+        canvas.height = 512;
+    }
+    //canvas.width = 2096;  for screen capture or use 4k resolution with old firefox, i.e. 3840x2160
+    //canvas.height =2096;
     initGL();
     initShaders();
     initBuffers();
@@ -257,75 +253,121 @@ function webGLStart() {
     tick();
 }
 
+var player;
+var player1;
+var player2;
 function PlaySound(i) {
     switch (i) {
         case 1:
-            audio1.play();
+            if (player == undefined) {
+                player = document.getElementById('audio');
+                player.loop = false;
+            }
+            player.load();
+            player.play();
             break;
         case 2:
-            if (heartbeat === 1) {
-                audio2.pause();
-                heartbeat = 0;
-            } else {
-                heartbeat = 1;
-                audio2.play();
+            if (player1 == undefined) {
+                player1 = document.getElementById('audio1');
             }
+            player1.load();
+            player1.play();
             break;
         case 3:
-            audio3.play();
-            break;
-        case 4:
-            audio3.play();
-            break;
-    }
-}
-function Action(i) {
-    PlaySound(i);
-    switch (i) {
-        case 1: // style
-            Param1 = Param1 + 1;
-            if (Param1 > 1)
-                Param1 = 0;
-            break;
-        case 2: // fast/slow
-            Param2 = Param2 + 1;
-            if (Param2 > 1)
-                Param2 = 0;
-            break;
-        case 3: // colours
-            Param3 = Param3 + 1;
-            if (Param3 > 4)
-                Param3 = 0;
-            break;
-        case 4: // mirrors
-            index = index + 1;
-            if (index > 2)
-                index = 0;
+            if (player2 == undefined) {
+                player2 = document.getElementById('audio2');
+            }
+            player2.load();
+            player2.play();
             break;
     }
 }
 
-function MonitorKeyDown(e) {
+function Action(i) {
+    switch (i) {
+        case 1: // style
+            Param1 = Param1 + 1;
+            if (Param1 > 4)
+                Param1 = 1;
+            PlaySound(2);
+            break;
+        case 2: // symetry
+            Param2 = Param2 + 1;
+            if (Param2 > 4)
+                Param2 = 1;
+            PlaySound(1);
+            break;
+        case 3: // colour
+            Param3 = Param3 + 1;
+            if (Param3 > 7)
+                Param3 = 1;
+            PlaySound(1);
+            break;
+        case 4: // background
+            Param4 = Param4 + 1;
+            if (Param4 > 6)
+                Param4 = 1;
+            PlaySound(3);
+            break;
+        case 5: // left
+            index = index - 1;
+            if (index < 0) index = 3;
+            current_program = programsArray[index];
+            break;
+        case 6: // right
+            index = index + 1;
+            if (index > 3) index = 0;
+            current_program = programsArray[index];
+            break;
+    }
+}
+
+function toggleButtons() {
+    var button = document.querySelector('button');
+    var button1 = document.querySelector('button1');
+    var button2 = document.querySelector('button2');
+    var button3 = document.querySelector('button3');
+    var buttonl = document.querySelector('buttonl');
+    var buttonr = document.querySelector('buttonr');
+    button.hidden = !button.hidden;
+    button1.hidden = !button1.hidden;
+    button2.hidden = !button2.hidden;
+    button3.hidden = !button3.hidden;
+    buttonl.hidden = !buttonl.hidden;
+    buttonr.hidden = !buttonr.hidden;
+}
+
+function MonitorKeyDown(e) { // stop autorepeat of keys with KeyState1-4 flags
     if (!e) e = window.event;
     if (e.keyCode == 32 || e.keyCode == 49) {
         if (keyState1 == 0)
             Action(4);
-        keyState1 = 1;
     }
     else if (e.keyCode == 50) {
-        if (keyState2 == 0)
-            Action(2);
-        keyState2 = 1;
-    }
-    else if (e.keyCode == 51 || e.keyCode == 13) {
         if (keyState2 == 0)
             Action(3);
         keyState2 = 1;
     }
-    else if (e.keyCode == 52) {
-        if (keyState2 == 0)
+    else if (e.keyCode == 51 || e.keyCode == 13) {
+        if (keyState3 == 0)
             Action(1);
-        keyState2 = 1;
+        keyState3 = 1;
+    }
+    else if (e.keyCode == 52) {
+        if (keyState4 == 0)
+            Action(2);
+        keyState4 = 1;
+    }
+    else if (e.keyCode == 53) {
+        toggleButtons();
+    }
+    else if (e.keyCode == 189) { // +
+        if (keyStatel == 0)
+            Action(5); buttonl
+    }
+    else if (e.keyCode == 187) { // -
+        if (keyStater == 0)
+            Action(6);
     }
     return false;
 }
@@ -339,10 +381,16 @@ function MonitorKeyUp(e) {
         keyState2 = 0;
     }
     else if (e.keyCode == 51 || e.keyCode == 13) {
-        keyState2 = 0;
+        keyState3 = 0;
     }
     else if (e.keyCode == 52) {
-        keyState2 = 0;
+        keyState4 = 0;
+    }
+    else if (e.keyCode == 189) {
+        keyStatel = 0;
+    }
+    else if (e.keyCode == 187) {
+        keyStater = 0;
     }
     return false;
 }
@@ -355,6 +403,9 @@ function MonitorMouseDown(e) {
         mouseX = e.clientX / canvas.scrollWidth;
         mouseY = 1.0 - e.clientY / canvas.scrollHeight;
     }
+    var c = document.getElementById("container");
+    c.style.filter = "sepia(1) hue-rotate(230deg) saturate(2)";
+    toggleButtons();
     return false;
 }
 
@@ -363,8 +414,13 @@ function MonitorMouseUp(e) {
     if (e.button == 0) {
         mouseState = 0;
     }
+    var c = document.getElementById("container");
+    c.style.filter = "grayscale(0)";
     return false;
 }
+
+
+var c = document.getElementById("body");
 
 function camStart(isTwa, hasXboxControls) {
     var splash = document.querySelector('splash');
@@ -559,5 +615,4 @@ function camStart(isTwa, hasXboxControls) {
 
         }
     }
-
 }
