@@ -1,4 +1,4 @@
-var cacheName = 'abstract-pwa';
+var cacheName = 'abstract-pwa-xbox';
 var filesToCache = [
   './',
   './index.html',

@@ -1,6 +1,6 @@
 {
-  "name": "Abstract PWA",
-  "short_name": "Abstract",
+  "name": "Abstract PWA with XBox Controller",
+  "short_name": "Abstract with XBox Controller",
   "icons": [{
     "src": "images/abstract-128.png",
       "sizes": "128x128",

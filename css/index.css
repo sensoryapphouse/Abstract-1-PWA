@@ -72,7 +72,7 @@ splash {
 buttonl {
   position: absolute;
   top: 8vh;
-  left: 15vw;
+  left: 2vw;
   width: 8vh;
   height: 8vh;
   border-radius: 0vh;
@@ -94,14 +94,14 @@ buttonl:hover {
 buttonl:active {
   background-size: 8vh 8vh;
   opacity: 0.2;
-  left:15vw;
+  left:2vw;
   top:8vh;
 }
 
 buttonr {
   position: absolute;
   top: 8vh;
-  left: 75vw;
+  left: 90vw;
   width: 8vh;
   height: 8vh;
   border-radius: 0vh;
@@ -123,84 +123,8 @@ buttonr:hover {
 buttonr:active {
   background-size: 8vh 8vh;
   opacity: 0.2;
-  left:75vw;
+  left:90vw;
   top:8vh;
-}
-
-@media screen and (orientation:landscape) {
-  /* Your CSS Here*/
-  button {
-    top: 80vh !important;
-    width: 8vw !important;
-    height: 8vw !important;
-    border-radius: 2vw !important;
-    background-size: 8vw 8vw !important;
-  }
-
-  button:hover {
-    background-size: 8.2vw 8.2vw !important;
-    opacity: 1.0 !important;
-  }
-
-  button:active {
-    background-size: 8vw 8vw !important;
-    left:15vw !important;
-    top:85vh !important;
-  }
-
-  button1 {
-    top: 80vh !important;
-    width: 8vw !important;
-    height: 8vw !important;
-    border-radius: 2vw !important;
-    background-size: 8vw 8vw !important;
-  }
-
-  button1:hover {
-    background-size: 8.2vw 8.2vw !important;
-    opacity: 1.0 !important;
-  }
-
-  button1:active {
-    background-size: 8vh 8vh !important;
-    opacity: 0.2 !important;
-  }
-
-  button2 {
-    top: 80vh !important;
-    width: 8vw !important;
-    height: 8vw !important;
-    border-radius: 2vw !important;
-    background-size: 8vw 8vw !important;
-  }
-
-  button2:hover {
-    background-size: 8.2vw 8.2vw !important;
-    opacity: 1.0 !important;
-  }
-
-  button2:active {
-    background-size: 8vh 8vh !important;
-    opacity: 0.2 !important;
-  }
-
-  button3 {
-    top: 80vh !important;
-    width: 8vw !important;
-    height: 8vw !important;
-    border-radius: 2vw !important;
-    background-size: 8vw 8vw !important;
-  }
-
-  button3:hover {
-    background-size: 8.2vw 8.2vw !important;
-    opacity: 1.0 !important;
-  }
-
-  button3:active {
-    background-size: 8vh 8vh !important;
-    opacity: 0.2 !important;
-  }
 }
 
 button {

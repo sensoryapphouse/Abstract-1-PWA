@@ -9,6 +9,7 @@ window.onload = () => {
     const urlParams = new URLSearchParams(queryString);
     const isTwa = urlParams.get('isTwa');
     const hasXboxControls = urlParams.get('xbox');
+
     camStart(isTwa, hasXboxControls);
 }
 
@@ -615,4 +616,5 @@ function camStart(isTwa, hasXboxControls) {
 
         }
     }
+
 }
