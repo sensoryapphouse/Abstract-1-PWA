@@ -1,5 +1,19 @@
+var player;
+var player1;
+var player2;
+
 window.onload = () => {
     'use strict';
+
+    player = document.getElementById('audio');
+    player.loop = false;
+    player.load();
+
+    player1 = document.getElementById('audio1');
+    player1.load();
+
+    player2 = document.getElementById('audio2');
+    player2.load();
 
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker
@@ -254,31 +268,15 @@ function webGLStart() {
     tick();
 }
 
-var player;
-var player1;
-var player2;
 function PlaySound(i) {
     switch (i) {
         case 1:
-            if (player == undefined) {
-                player = document.getElementById('audio');
-                player.loop = false;
-            }
-            player.load();
             player.play();
             break;
         case 2:
-            if (player1 == undefined) {
-                player1 = document.getElementById('audio1');
-            }
-            player1.load();
             player1.play();
             break;
         case 3:
-            if (player2 == undefined) {
-                player2 = document.getElementById('audio2');
-            }
-            player2.load();
             player2.play();
             break;
     }
